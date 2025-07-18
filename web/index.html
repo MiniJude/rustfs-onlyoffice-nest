@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>onlyoffice-viewer</title>
+    <style>
+        html,body{
+            height: 100%;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="placeholder" style="height: 100%"></div>
+    <script
+      type="text/javascript"
+      src="http://localhost:18760/web-apps/apps/api/documents/api.js?preload=placeholder"
+    ></script>
+    <script type="text/javascript">
+
+        let fileUrl =window.prompt('请输入要预览的文件URL')
+
+        while(!fileUrl){
+            alert('请输入文件URL')
+            fileUrl =window.prompt('请输入要预览的文件URL')
+        }
+
+        fetch(`http://localhost:3000/api/onlyoffice/config?fileUrl=${encodeURIComponent(fileUrl)}&fileType=doc&mode=view`)
+        .then((response) => {
+            return response.json()
+        })
+        .then(({ data: config }) => {
+          console.log(config);
+          const docEditor = new DocsAPI.DocEditor("placeholder", config);
+        });
+    </script>
+  </body>
+</html>

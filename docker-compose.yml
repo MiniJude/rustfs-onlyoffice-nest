@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # OnlyOffice 文档服务器
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    ports:
+      - "18760:80"
+    volumes:
+      - ./data/onlyoffice/logs:/var/log/onlyoffice  # 绑定挂载：便于直接查看日志
+      - onlyoffice-data:/var/www/onlyoffice/Data    # 命名卷：文档数据
+      - onlyoffice-lib:/var/lib/onlyoffice          # 命名卷：库文件
+      - onlyoffice-db:/var/lib/postgresql           # 命名卷：数据库数据
+    environment:
+      - JWT_ENABLED=true
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # NestJS 后端服务 
+  server:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: nestjs-server
+    ports:
+      - "${SERVER_PORT:-3000}:3000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - ONLYOFFICE_URL=http://onlyoffice
+      - ONLYOFFICE_JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - API_BASE_URL=http://server
+      - PORT=3000
+    depends_on:
+      - onlyoffice
+    restart: unless-stopped
+    networks:
+      - app-network
+  
+  # 前端静态服务
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: web-frontend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  onlyoffice-data:
+  onlyoffice-lib:
+  onlyoffice-db:
